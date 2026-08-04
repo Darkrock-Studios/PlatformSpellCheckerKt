@@ -84,40 +84,59 @@ actual class PlatformSpellChecker(
 		) : OperationContext()
 	}
 
+	// Thar be dragons: providers deliver arrays with null elements, and this
+	// listener runs off the coroutine, so anything thrown here kills the app.
 	private val spellCheckerSessionListener = object : SpellCheckerSession.SpellCheckerSessionListener {
-		override fun onGetSuggestions(results: Array<out SuggestionsInfo>?) {
-			val cookie = results?.firstOrNull()?.cookie ?: return
-			val context = pendingOperations.remove(cookie) ?: return
+		override fun onGetSuggestions(results: Array<out SuggestionsInfo?>?) {
+			val info = results?.firstNotNullOfOrNull { it } ?: return
+			val context = pendingOperations.remove(info.cookie) ?: return
 
-			val inDict = isWordCorrectFromResults(results)
 			when (context) {
-				is OperationContext.WordCheck ->
-					if (inDict) context.continuation.resume(CorrectWord(context.text))
-					else context.continuation.resume(MisspelledWord(context.text, extractSuggestions(results, context.max)))
+				is OperationContext.WordCheck -> context.continuation.resume(
+					parsedOrFallback(CorrectWord(context.text)) {
+						if (isInDictionary(info)) CorrectWord(context.text)
+						else MisspelledWord(context.text, extractSuggestions(info, context.max))
+					}
+				)
 				is OperationContext.WordIsCorrect ->
-					context.continuation.resume(inDict)
+					context.continuation.resume(parsedOrFallback(true) { isInDictionary(info) })
 				is OperationContext.SentenceCheck ->
 					context.continuation.resume(emptyList())
 			}
 		}
 
-		override fun onGetSentenceSuggestions(results: Array<out SentenceSuggestionsInfo>?) {
-			if (results.isNullOrEmpty()) return
-			val cookie = findCookie(results) ?: return
+		override fun onGetSentenceSuggestions(results: Array<out SentenceSuggestionsInfo?>?) {
+			val sentences = results?.filterNotNull().orEmpty()
+			if (sentences.isEmpty()) return
+			val cookie = findCookie(sentences) ?: return
 			val context = pendingOperations.remove(cookie) ?: return
 
 			when (context) {
-				is OperationContext.SentenceCheck ->
-					context.continuation.resume(processSentenceSuggestions(results, context.text))
-				is OperationContext.WordCheck -> {
-					val suggestions = extractSingleWordSuggestions(results, context.max)
-					if (suggestions == null) context.continuation.resume(CorrectWord(context.text))
-					else context.continuation.resume(MisspelledWord(context.text, suggestions))
-				}
-				is OperationContext.WordIsCorrect ->
-					context.continuation.resume(extractSingleWordSuggestions(results, 1) == null)
+				is OperationContext.SentenceCheck -> context.continuation.resume(
+					parsedOrFallback(emptyList()) { processSentenceSuggestions(sentences, context.text) }
+				)
+				is OperationContext.WordCheck -> context.continuation.resume(
+					parsedOrFallback(CorrectWord(context.text)) {
+						when (val suggestions = extractSingleWordSuggestions(sentences, context.max)) {
+							null -> CorrectWord(context.text)
+							else -> MisspelledWord(context.text, suggestions)
+						}
+					}
+				)
+				is OperationContext.WordIsCorrect -> context.continuation.resume(
+					parsedOrFallback(true) { extractSingleWordSuggestions(sentences, 1) == null }
+				)
 			}
 		}
+	}
+
+	// Must wrap only the parsing: resume() can run the caller's coroutine inline,
+	// and swallowing an exception from there would hide a caller-side failure.
+	private inline fun <T> parsedOrFallback(fallback: T, block: () -> T): T = try {
+		block()
+	} catch (e: Exception) {
+		Napier.w("Spell-checker provider returned malformed results", e)
+		fallback
 	}
 
 	actual suspend fun checkMultiword(text: String): List<SpellingCorrection> {
@@ -235,19 +254,20 @@ actual class PlatformSpellChecker(
 	}
 
 	private fun processSentenceSuggestions(
-		results: Array<out SentenceSuggestionsInfo>?,
+		results: List<SentenceSuggestionsInfo>,
 		text: String,
 	): List<SpellingCorrection> {
 		val corrections = mutableListOf<SpellingCorrection>()
-		results?.forEach { sentenceSuggestionsInfo ->
+		results.forEach { sentenceSuggestionsInfo ->
 			for (i in 0 until sentenceSuggestionsInfo.suggestionsCount) {
 				val suggestionsInfo = sentenceSuggestionsInfo.getSuggestionsInfoAt(i) ?: continue
 				val offset = sentenceSuggestionsInfo.getOffsetAt(i)
 				val length = sentenceSuggestionsInfo.getLengthAt(i)
+				if (offset < 0 || length <= 0 || offset + length > text.length) continue
 				val misspelledWord = text.substring(offset, offset + length)
 
 				val wordSuggestions = (0 until suggestionsInfo.suggestionsCount)
-					.map { suggestionsInfo.getSuggestionAt(it) }
+					.mapNotNull { suggestionsInfo.getSuggestionAt(it) }
 
 				corrections.add(
 					SpellingCorrection(
@@ -262,7 +282,7 @@ actual class PlatformSpellChecker(
 		return corrections
 	}
 
-	private fun findCookie(results: Array<out SentenceSuggestionsInfo>): Int? {
+	private fun findCookie(results: List<SentenceSuggestionsInfo>): Int? {
 		for (sentence in results) {
 			for (i in 0 until sentence.suggestionsCount) {
 				val info = sentence.getSuggestionsInfoAt(i) ?: continue
@@ -275,7 +295,7 @@ actual class PlatformSpellChecker(
 	// Returns null when the provider reported no spelling error for the input
 	// otherwise returns the suggestion list (which may be empty).
 	private fun extractSingleWordSuggestions(
-		results: Array<out SentenceSuggestionsInfo>,
+		results: List<SentenceSuggestionsInfo>,
 		max: Int,
 	): List<String>? {
 		val errorMask = SuggestionsInfo.RESULT_ATTR_LOOKS_LIKE_TYPO or
@@ -286,20 +306,17 @@ actual class PlatformSpellChecker(
 				if ((info.suggestionsAttributes and errorMask) == 0) continue
 				val cap = if (max > 0) max else info.suggestionsCount
 				return (0 until minOf(info.suggestionsCount, cap))
-					.map { info.getSuggestionAt(it) }
+					.mapNotNull { info.getSuggestionAt(it) }
 			}
 		}
 		return null
 	}
 
-	private fun isWordCorrectFromResults(results: Array<out SuggestionsInfo>?): Boolean {
-		val info = results?.firstOrNull() ?: return false
-		return (info.suggestionsAttributes and SuggestionsInfo.RESULT_ATTR_IN_THE_DICTIONARY) != 0
-	}
+	private fun isInDictionary(info: SuggestionsInfo): Boolean =
+		(info.suggestionsAttributes and SuggestionsInfo.RESULT_ATTR_IN_THE_DICTIONARY) != 0
 
-	private fun extractSuggestions(results: Array<out SuggestionsInfo>?, max: Int): List<String> {
-		val info = results?.firstOrNull() ?: return emptyList()
-		if ((info.suggestionsAttributes and SuggestionsInfo.RESULT_ATTR_IN_THE_DICTIONARY) != 0) return emptyList()
-		return (0 until minOf(info.suggestionsCount, max)).map { info.getSuggestionAt(it) }
+	private fun extractSuggestions(info: SuggestionsInfo, max: Int): List<String> {
+		if (isInDictionary(info)) return emptyList()
+		return (0 until minOf(info.suggestionsCount, max)).mapNotNull { info.getSuggestionAt(it) }
 	}
 }
