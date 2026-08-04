@@ -11,6 +11,8 @@ import platform.UIKit.UIViewController
  * This function is called from the iOS side to create the main UIViewController.
  */
 fun MainViewController(): UIViewController {
+	initLogging()
+
 	// Initialize Koin with iOS module
 	startKoin {
 		modules(iosModule)

@@ -12,6 +12,8 @@ class SpellCheckApplication : Application() {
 	override fun onCreate() {
 		super.onCreate()
 
+		initLogging()
+
 		startKoin {
 			androidLogger(Level.ERROR)
 			androidContext(this@SpellCheckApplication)

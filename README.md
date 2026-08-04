@@ -82,6 +82,35 @@ val systemLocale: SpLocale = factory.currentSystemLocale()
 val locales: List<SpLocale> = factory.availableLocales()
 ```
 
+### Logging
+
+Spell check calls **fail open**. If the platform provider is unavailable, does not respond
+within the operation timeout, or returns something malformed, the check degrades to
+"correctly spelled" rather than throwing. This keeps a flaky system service from crashing
+your app, but it also means a broken provider looks exactly like a document with no typos.
+
+Every one of those paths logs a warning through [Napier](https://github.com/AAkira/Napier),
+which discards logs until a base is installed. Install one during startup or you will get no
+warning at all:
+
+```kotlin
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
+
+Napier.base(DebugAntilog())
+```
+
+Worth knowing when something reports no spelling errors for anything: Android emulator images
+often have a spell checker service that binds but never responds, so every check hits the
+timeout. With logging installed that shows up as:
+
+```
+W PlatformSpellChecker$checkWord: checkWord('boooks') timed out after 3s
+  — spell-checker provider did not respond
+```
+
+Test on a physical device before concluding the library is at fault.
+
 ## Supported Platforms
 
 | Platform      | Supported | Implementation Details                                                                                                                                                                                                                                                                                                                                                 |
