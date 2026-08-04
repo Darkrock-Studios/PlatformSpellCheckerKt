@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
 	alias(libs.plugins.kotlin.multiplatform)
-	alias(libs.plugins.android.library)
+	alias(libs.plugins.android.kotlin.multiplatform.library)
 	alias(libs.plugins.dokka)
 	alias(libs.plugins.maven.central.publish)
 }
@@ -20,9 +20,17 @@ dokka {
 }
 
 kotlin {
-	androidTarget {
+	android {
+		namespace = "com.darkrockstudios.libs.platformspellchecker"
+		compileSdk = libs.versions.android.compileSdk.get().toInt()
+		minSdk = libs.versions.android.minSdk.get().toInt()
+
 		compilerOptions {
 			jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvm.get()))
+		}
+
+		withDeviceTest {
+			instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 		}
 	}
 
@@ -63,28 +71,14 @@ kotlin {
 			}
 		}
 
-		androidInstrumentedTest.dependencies {
-			implementation(libs.kotlin.test)
-			implementation(libs.kotlinx.coroutines.test)
-			implementation(libs.androidx.junit)
-			implementation(libs.androidx.test.runner)
+		val androidDeviceTest by getting {
+			dependencies {
+				implementation(libs.kotlin.test)
+				implementation(libs.kotlinx.coroutines.test)
+				implementation(libs.androidx.junit)
+				implementation(libs.androidx.test.runner)
+			}
 		}
-	}
-}
-
-android {
-	namespace = "com.darkrockstudios.libs.platformspellchecker"
-	compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-	defaultConfig {
-		minSdk = libs.versions.android.minSdk.get().toInt()
-		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-	}
-
-	compileOptions {
-		val jvmVersion = libs.versions.jvm.get()
-		sourceCompatibility = JavaVersion.toVersion(jvmVersion)
-		targetCompatibility = JavaVersion.toVersion(jvmVersion)
 	}
 }
 
@@ -130,6 +124,6 @@ mavenPublishing {
 	signAllPublications()
 
 	// Publishes to Maven Central via central.sonatype.com
-	publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
+	publishToMavenCentral(automaticRelease = true)
 }
 
