@@ -10,7 +10,7 @@ import io.github.aakira.napier.Napier
  * Hunspell is the most widely used spell checker on Linux systems.
  * It's used by LibreOffice, Firefox, Chrome, and many other applications.
  *
- * Dictionary files are searched in standard locations:
+ * Dictionary files are searched in the `DICPATH` directories, then in standard locations:
  * - /usr/share/hunspell/
  * - /usr/share/myspell/
  * - ~/.local/share/hunspell/
@@ -156,7 +156,7 @@ class LinuxSpellChecker private constructor(
 		/**
 		 * Gets a list of available dictionary paths to search.
 		 */
-		fun getDictionaryPaths(): List<String> = HunspellWrapper.DICTIONARY_PATHS +
+		fun getDictionaryPaths(): List<String> = HunspellWrapper.getDictionarySearchPaths() +
 				(System.getProperty("user.home") + "/.local/share/hunspell")
 	}
 }

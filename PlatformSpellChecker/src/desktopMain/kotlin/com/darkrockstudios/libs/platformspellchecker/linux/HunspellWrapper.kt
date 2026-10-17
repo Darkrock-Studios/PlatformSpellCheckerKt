@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Wrapper around the Hunspell library providing a cleaner Kotlin API.
  *
  * Handles:
- * - Dictionary file discovery from standard system paths
+ * - Dictionary file discovery from `DICPATH` and standard system paths
  * - User dictionary support (~/.local/share/hunspell/)
  * - Proper encoding handling
  * - Resource cleanup
@@ -200,6 +200,18 @@ class HunspellWrapper private constructor(
 		)
 
 		/**
+		 * Directories searched for dictionaries: the entries of the `DICPATH` environment
+		 * variable, colon separated as the hunspell CLI reads it, ahead of [DICTIONARY_PATHS].
+		 * `DICPATH` reaches dictionaries outside the standard paths, such as inside a sandbox.
+		 */
+		fun getDictionarySearchPaths(): List<String> = getDictionarySearchPaths(System.getenv(DICPATH))
+
+		internal fun getDictionarySearchPaths(dicPath: String?): List<String> =
+			dicPath.orEmpty().split(File.pathSeparator).filter { it.isNotBlank() } + DICTIONARY_PATHS
+
+		private const val DICPATH = "DICPATH"
+
+		/**
 		 * Gets the user dictionary directory.
 		 */
 		private fun getUserDictionaryDir(): File {
@@ -220,15 +232,17 @@ class HunspellWrapper private constructor(
 		 * @param languageTag BCP47 language tag (e.g., "en-US")
 		 * @return Pair of (affPath, dicPath) or null if not found
 		 */
-		fun findDictionaryFiles(languageTag: String): Pair<String, String>? {
+		fun findDictionaryFiles(languageTag: String): Pair<String, String>? =
+			findDictionaryFiles(languageTag, System.getenv(DICPATH))
+
+		internal fun findDictionaryFiles(languageTag: String, dicPath: String?): Pair<String, String>? {
 			// Convert BCP47 to Hunspell format (e.g., en-US -> en_US)
 			val hunspellName = languageTag.replace("-", "_")
 
 			// Also try just the language part (e.g., en)
 			val languagePart = languageTag.split("-", "_").firstOrNull() ?: languageTag
 
-			// Search in all standard paths
-			val searchPaths = DICTIONARY_PATHS + getUserDictionaryDir().absolutePath
+			val searchPaths = getDictionarySearchPaths(dicPath) + getUserDictionaryDir().absolutePath
 
 			for (basePath in searchPaths) {
 				val dir = File(basePath)
@@ -267,10 +281,12 @@ class HunspellWrapper private constructor(
 		/**
 		 * Gets a list of all available dictionary language tags.
 		 */
-		fun getAvailableLanguages(): List<String> {
+		fun getAvailableLanguages(): List<String> = getAvailableLanguages(System.getenv(DICPATH))
+
+		internal fun getAvailableLanguages(dicPath: String?): List<String> {
 			val languages = mutableSetOf<String>()
 
-			for (basePath in DICTIONARY_PATHS) {
+			for (basePath in getDictionarySearchPaths(dicPath)) {
 				val dir = File(basePath)
 				if (!dir.exists() || !dir.isDirectory) continue
 
@@ -297,14 +313,16 @@ class HunspellWrapper private constructor(
 		 * @param languageTag BCP47 language tag (e.g., "en-US")
 		 * @return HunspellWrapper instance, or null if creation failed
 		 */
-		fun create(languageTag: String): HunspellWrapper? {
+		fun create(languageTag: String): HunspellWrapper? = create(languageTag, System.getenv(DICPATH))
+
+		internal fun create(languageTag: String, dicPath: String?): HunspellWrapper? {
 			val library = HunspellLibrary.load()
 			if (library == null) {
 				Napier.e("Failed to load Hunspell library")
 				return null
 			}
 
-			val dictFiles = findDictionaryFiles(languageTag)
+			val dictFiles = findDictionaryFiles(languageTag, dicPath)
 			if (dictFiles == null) {
 				Napier.e("No dictionary files found for language: $languageTag")
 				return null
