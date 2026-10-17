@@ -23,8 +23,7 @@ kotlin {
 	// iOS targets
 	listOf(
 		iosArm64(),
-		iosSimulatorArm64(),
-		iosX64()
+		iosSimulatorArm64()
 	).forEach { iosTarget ->
 		iosTarget.binaries.framework {
 			baseName = "ExampleApp"
@@ -77,10 +76,6 @@ kotlin {
 		}
 
 		val iosSimulatorArm64Main by getting {
-
-		}
-
-		val iosX64Main by getting {
 
 		}
 	}

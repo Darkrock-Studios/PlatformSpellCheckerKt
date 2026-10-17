@@ -134,8 +134,9 @@ A sample application demonstrating the PlatformSpellChecker library.
 - **Dependency Injection**: Koin for clean architecture
 
 ## Dependencies (libs.versions.toml)
-- Kotlin 2.1.0
-- Compose Multiplatform 1.7.1
-- Koin 4.0.0 (Multiplatform)
-- Lifecycle ViewModel 2.8.4 (Multiplatform)
-- Kotlinx Coroutines 1.9.0
+- Kotlin 2.4.21
+- Compose Multiplatform 1.12.2
+- Koin 4.2.2 (Multiplatform)
+- Lifecycle ViewModel 2.11.0 (Multiplatform)
+- Kotlinx Coroutines 1.11.0
+- AGP 9.4.1, Gradle 9.8.1

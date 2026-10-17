@@ -7,11 +7,7 @@ cd "$(dirname "$0")/.."
 
 # Determine which framework to build based on the target platform
 if [[ "$PLATFORM_NAME" == "iphonesimulator" ]]; then
-    if [[ "$(uname -m)" == "arm64" ]]; then
-        TARGET="iosSimulatorArm64"
-    else
-        TARGET="iosX64"
-    fi
+    TARGET="iosSimulatorArm64"
 else
     TARGET="iosArm64"
 fi
