@@ -45,19 +45,34 @@ kotlin {
 	iosSimulatorArm64()
 	iosX64()
 
+	// Linux (Kotlin/Native): no spell-checking backend yet, see PlatformSpellChecker.linux.kt
+	linuxX64()
+	linuxArm64()
+
 	sourceSets {
 		commonMain.dependencies {
 			implementation(libs.kotlinx.coroutines.core)
+		}
+
+		// Napier publishes no Linux native build, so each platform that logs takes it on its own.
+		androidMain.dependencies {
+			implementation(libs.kotlinx.coroutines.android)
 			implementation(libs.napier)
 		}
 
-		androidMain.dependencies {
-			implementation(libs.kotlinx.coroutines.android)
+		iosMain.dependencies {
+			implementation(libs.napier)
+		}
+
+		linuxTest.dependencies {
+			implementation(libs.kotlin.test)
+			implementation(libs.kotlinx.coroutines.test)
 		}
 
 		val desktopMain by getting {
 			dependencies {
 				implementation(libs.kotlinx.coroutines.swing)
+				implementation(libs.napier)
 				implementation(libs.jna)
 				implementation(libs.jna.platform)
 			}
