@@ -41,6 +41,8 @@ kotlin {
 	jvm("desktop") {
 		compilerOptions {
 			jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvm.get()))
+			// Compile against the JDK API we target, not whichever JDK runs the build.
+			freeCompilerArgs.add("-Xjdk-release=${libs.versions.jvm.get()}")
 		}
 	}
 
