@@ -55,7 +55,7 @@ kotlin {
 			implementation(libs.kotlinx.coroutines.android)
 		}
 
-		val desktopMain by getting {
+		getByName("desktopMain") {
 			dependencies {
 				implementation(libs.kotlinx.coroutines.swing)
 				implementation(libs.jna)
@@ -63,7 +63,7 @@ kotlin {
 			}
 		}
 
-		val desktopTest by getting {
+		getByName("desktopTest") {
 			dependencies {
 				implementation(libs.kotlin.test)
 				implementation(libs.kotlin.test.junit)
@@ -71,7 +71,7 @@ kotlin {
 			}
 		}
 
-		val androidDeviceTest by getting {
+		getByName("androidDeviceTest") {
 			dependencies {
 				implementation(libs.kotlin.test)
 				implementation(libs.kotlinx.coroutines.test)

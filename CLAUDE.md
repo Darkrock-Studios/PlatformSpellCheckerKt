@@ -139,4 +139,4 @@ A sample application demonstrating the PlatformSpellChecker library.
 - Koin 4.2.2 (Multiplatform)
 - Lifecycle ViewModel 2.11.0 (Multiplatform)
 - Kotlinx Coroutines 1.11.0
-- AGP 9.4.1, Gradle 9.8.1
+- AGP 9.5.2, Gradle 9.9.2

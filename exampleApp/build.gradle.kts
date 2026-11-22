@@ -60,23 +60,11 @@ kotlin {
 			implementation(libs.koin.android)
 		}
 
-		val desktopMain by getting {
+		getByName("desktopMain") {
 			dependencies {
 				implementation(compose.desktop.currentOs)
 				implementation(libs.kotlinx.coroutines.swing)
 			}
-		}
-
-		val iosMain by creating {
-
-		}
-
-		val iosArm64Main by getting {
-
-		}
-
-		val iosSimulatorArm64Main by getting {
-
 		}
 	}
 }
