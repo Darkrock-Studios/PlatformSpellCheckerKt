@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +36,7 @@ fun SpellCheckContent(
 			modifier = Modifier.padding(16.dp)
 		)
 
-		TabRow(selectedTabIndex = selectedTabIndex) {
+		PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
 			tabs.forEachIndexed { index, title ->
 				Tab(
 					selected = selectedTabIndex == index,

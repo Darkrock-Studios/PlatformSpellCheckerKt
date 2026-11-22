@@ -1,6 +1,7 @@
 package com.darkrockstudios.libs.platformspellchecker
 
 import io.github.aakira.napier.Napier
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.Foundation.*
@@ -12,7 +13,7 @@ import platform.UIKit.UITextChecker
  * UITextChecker is part of UIKit and provides spell checking functionality
  * using the system's dictionaries and language settings.
  */
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 actual class PlatformSpellChecker(
 	private val locale: SpLocale? = null
 ) : AutoCloseable {
@@ -43,7 +44,7 @@ actual class PlatformSpellChecker(
 		}
 
 		val results = mutableListOf<SpellingCorrection>()
-		val nsString = text as NSString
+		val nsString = NSString.create(string = text)
 		val range = NSMakeRange(0u, text.length.toULong())
 
 		var currentOffset = 0uL
@@ -72,7 +73,7 @@ actual class PlatformSpellChecker(
 				range = misspelledRange,
 				inString = text,
 				language = language
-			) as? List<*>
+			)
 
 			val suggestionList = suggestions?.mapNotNull { it as? String } ?: emptyList()
 

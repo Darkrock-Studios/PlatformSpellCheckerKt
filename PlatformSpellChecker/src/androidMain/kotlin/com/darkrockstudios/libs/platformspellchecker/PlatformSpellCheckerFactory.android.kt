@@ -158,6 +158,6 @@ actual class PlatformSpellCheckerFactory(private val context: Context) {
 
 	private fun legacyLocale(raw: String): java.util.Locale {
 		val parts = raw.split('_', '-')
-		return java.util.Locale(parts.getOrNull(0).orEmpty(), parts.getOrNull(1).orEmpty())
+		return javaLocaleOf(parts.getOrNull(0).orEmpty(), parts.getOrNull(1).orEmpty())
 	}
 }

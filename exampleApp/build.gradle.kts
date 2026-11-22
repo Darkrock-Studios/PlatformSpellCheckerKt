@@ -3,13 +3,17 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
 	alias(libs.plugins.kotlin.multiplatform)
-	alias(libs.plugins.android.application)
+	alias(libs.plugins.android.kotlin.multiplatform.library)
 	alias(libs.plugins.kotlin.compose)
 	alias(libs.plugins.compose.multiplatform)
 }
 
 kotlin {
-	androidTarget {
+	android {
+		namespace = "com.darkrockstudios.libs.platformspellchecker.example"
+		compileSdk = libs.versions.android.compileSdk.get().toInt()
+		minSdk = libs.versions.android.minSdk.get().toInt()
+
 		compilerOptions {
 			jvmTarget.set(JvmTarget.fromTarget(libs.versions.jvm.get()))
 		}
@@ -35,11 +39,10 @@ kotlin {
 		commonMain.dependencies {
 			implementation(project(":PlatformSpellChecker"))
 
-			implementation(compose.runtime)
-			implementation(compose.foundation)
-			implementation(compose.material3)
-			implementation(compose.ui)
-			implementation(compose.components.resources)
+			implementation(libs.compose.runtime)
+			implementation(libs.compose.foundation)
+			implementation(libs.compose.material3)
+			implementation(libs.compose.ui)
 
 			implementation(libs.kotlinx.coroutines.core)
 			implementation(libs.lifecycle.viewmodel)
@@ -53,54 +56,12 @@ kotlin {
 			implementation(libs.napier)
 		}
 
-		androidMain.dependencies {
-			implementation(libs.kotlinx.coroutines.android)
-			implementation(libs.androidx.core.ktx)
-			implementation(libs.androidx.activity.compose)
-			implementation(libs.koin.android)
-		}
-
 		getByName("desktopMain") {
 			dependencies {
 				implementation(compose.desktop.currentOs)
 				implementation(libs.kotlinx.coroutines.swing)
 			}
 		}
-	}
-}
-
-android {
-	namespace = "com.darkrockstudios.libs.platformspellchecker"
-	compileSdk = libs.versions.android.compileSdk.get().toInt()
-
-	defaultConfig {
-		applicationId = "com.darkrockstudios.libs.platformspellchecker"
-		minSdk = libs.versions.android.minSdk.get().toInt()
-		targetSdk = libs.versions.android.compileSdk.get().toInt()
-		versionCode = 1
-		versionName = "1.0"
-
-		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-	}
-
-	buildTypes {
-		release {
-			isMinifyEnabled = false
-			proguardFiles(
-				getDefaultProguardFile("proguard-android-optimize.txt"),
-				"proguard-rules.pro"
-			)
-		}
-	}
-
-	compileOptions {
-		val jvmVersion = libs.versions.jvm.get()
-		sourceCompatibility = JavaVersion.toVersion(jvmVersion)
-		targetCompatibility = JavaVersion.toVersion(jvmVersion)
-	}
-
-	buildFeatures {
-		compose = true
 	}
 }
 

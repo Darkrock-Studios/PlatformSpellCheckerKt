@@ -21,13 +21,11 @@ actual class PlatformSpellCheckerFactory() {
 	actual fun hasLanguage(locale: SpLocale): Boolean {
 		if (locale.language.isBlank()) return false
 		val normalized = if (locale.country.isNullOrBlank()) locale.language else "${locale.language}_${locale.country}"
-		val available = UITextChecker.availableLanguages() as? List<*>
-		return available?.any { it as? String == normalized } == true
+		return UITextChecker.availableLanguages().any { it as? String == normalized }
 	}
 
 	actual fun isAvailable(): Boolean {
-		val langs = UITextChecker.availableLanguages() as? List<*>
-		return langs?.isNotEmpty() == true
+		return UITextChecker.availableLanguages().isNotEmpty()
 	}
 
 	actual fun currentSystemLocale(): SpLocale {
@@ -41,7 +39,7 @@ actual class PlatformSpellCheckerFactory() {
 	}
 
 	actual fun availableLocales(): List<SpLocale> {
-		val langs = (UITextChecker.availableLanguages() as? List<*>)?.mapNotNull { it as? String } ?: return emptyList()
+		val langs = UITextChecker.availableLanguages().mapNotNull { it as? String }
 		return langs.map { s ->
 			val parts = s.split('_')
 			val lang = parts.getOrNull(0)?.lowercase() ?: ""

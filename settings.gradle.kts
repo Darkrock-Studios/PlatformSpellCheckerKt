@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "PlatformSpellChecker"
 include(":PlatformSpellChecker")
 include(":exampleApp")
+include(":androidApp")

@@ -20,6 +20,10 @@ dokka {
 }
 
 kotlin {
+	compilerOptions {
+		freeCompilerArgs.add("-Xexpect-actual-classes")
+	}
+
 	android {
 		namespace = "com.darkrockstudios.libs.platformspellchecker"
 		compileSdk = libs.versions.android.compileSdk.get().toInt()

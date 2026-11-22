@@ -23,12 +23,16 @@ PlatformSpellChecker/
 │       ├── androidMain/           # Android actual implementation
 │       └── desktopMain/           # Desktop actual implementation (stubbed)
 │
-├── exampleApp/                    # Compose Multiplatform App Module
+├── exampleApp/                    # Compose Multiplatform example (KMP library + desktop app)
 │   ├── build.gradle.kts
 │   └── src/
 │       ├── commonMain/            # Shared UI and ViewModel
-│       ├── androidMain/           # Android app entry point
-│       └── desktopMain/           # Desktop app entry point
+│       ├── desktopMain/           # Desktop app entry point
+│       └── iosMain/               # iOS entry point
+│
+├── androidApp/                    # Android application module (depends on exampleApp)
+│   ├── build.gradle.kts
+│   └── src/main/                  # Activity, Application, manifest, resources
 │
 ├── gradle/
 │   └── libs.versions.toml         # Version catalog
@@ -73,19 +77,21 @@ A Kotlin Multiplatform library providing spell checking functionality.
 
 ### exampleApp (Compose Multiplatform App)
 
-A sample application demonstrating the PlatformSpellChecker library.
+A sample application demonstrating the PlatformSpellChecker library. It is a KMP library on
+Android (`com.android.kotlin.multiplatform.library`); the Android app itself lives in `androidApp`
+because the KMP plugin no longer supports `com.android.application` in the same module.
 
 #### Shared Code (`commonMain`)
 - **App.kt** - Main composable entry point with Koin integration
 - **SpellCheckViewModel.kt** - ViewModel managing UI state
   - `TabUiState` - Data class with text, suggestions, and loading state
   - `wordTabState` / `sentenceTabState` - StateFlows for each tab
-- **ui/SpellCheckContent.kt** - Main container with TabRow navigation
+- **ui/SpellCheckContent.kt** - Main container with PrimaryTabRow navigation
 - **ui/WordCheckTab.kt** - Single word checking tab with adaptive layout
 - **ui/SentenceCheckTab.kt** - Sentence checking tab with adaptive layout
 - **ui/theme/** - Material 3 theming (Color.kt, Theme.kt, Type.kt)
 
-#### Android (`androidMain`)
+#### Android (`androidApp` module)
 - **MainActivity.kt** - Android Activity hosting the Compose UI
 - **SpellCheckApplication.kt** - Application class initializing Koin
 - **AndroidManifest.xml** - App manifest
@@ -100,7 +106,7 @@ A sample application demonstrating the PlatformSpellChecker library.
 
 ### Android
 ```bash
-./gradlew :exampleApp:assembleDebug
+./gradlew :androidApp:assembleDebug
 # Or run from Android Studio
 ```
 
